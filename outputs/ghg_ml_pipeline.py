@@ -27,7 +27,7 @@ import numpy as np
 import pandas as pd
 from sklearn.base import clone
 from sklearn.compose import ColumnTransformer
-from sklearn.ensemble import ExtraTreesRegressor, HistGradientBoostingRegressor, RandomForestRegressor
+from sklearn.ensemble import ExtraTreesRegressor, GradientBoostingRegressor, HistGradientBoostingRegressor, RandomForestRegressor
 from sklearn.inspection import permutation_importance
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import ElasticNet, Ridge
@@ -130,6 +130,95 @@ def data_quality_summary(df: pd.DataFrame) -> pd.DataFrame:
     return summary.sort_values(["missing_pct", "column"], ascending=[False, True])
 
 
+def outlier_summary(df: pd.DataFrame) -> pd.DataFrame:
+    rows = []
+    numeric_df = df.select_dtypes(include=["number"])
+    for column in numeric_df.columns:
+        series = numeric_df[column].dropna()
+        if series.empty:
+            continue
+        q1, q3 = series.quantile([0.25, 0.75])
+        iqr = q3 - q1
+        lower = q1 - 1.5 * iqr
+        upper = q3 + 1.5 * iqr
+        outliers = ((series < lower) | (series > upper)).sum()
+        rows.append(
+            {
+                "column": column,
+                "lower_bound": float(lower),
+                "upper_bound": float(upper),
+                "outlier_count": int(outliers),
+                "outlier_pct": round(float(outliers / len(series) * 100), 2),
+            }
+        )
+    return pd.DataFrame(rows).sort_values("outlier_pct", ascending=False)
+
+
+def save_eda_plots(df: pd.DataFrame, output_dir: Path) -> List[str]:
+    try:
+        import matplotlib.pyplot as plt
+    except Exception:
+        return []
+
+    saved: List[str] = []
+    plot_dir = output_dir / "plots"
+    plot_dir.mkdir(parents=True, exist_ok=True)
+
+    numeric = df.select_dtypes(include=["number"])
+    corr_cols = [
+        col
+        for col in [
+            "co2_c_flux_kg_ha_day",
+            "n2o_n_flux_g_ha_day",
+            "ch4_c_flux_g_ha_day",
+            "soil_nitrate_n_0_10cm",
+            "soil_ammonium_n_0_10cm",
+            "soil_moisture_5cm",
+            "soil_temperature_5cm",
+            "month",
+            "day_of_year",
+        ]
+        if col in numeric.columns
+    ]
+    if len(corr_cols) >= 3:
+        corr = numeric[corr_cols].corr()
+        fig, ax = plt.subplots(figsize=(10, 8), dpi=140)
+        image = ax.imshow(corr, cmap="coolwarm", vmin=-1, vmax=1)
+        ax.set_xticks(range(len(corr_cols)))
+        ax.set_yticks(range(len(corr_cols)))
+        ax.set_xticklabels(corr_cols, rotation=45, ha="right", fontsize=8)
+        ax.set_yticklabels(corr_cols, fontsize=8)
+        for i in range(len(corr_cols)):
+            for j in range(len(corr_cols)):
+                ax.text(j, i, f"{corr.iloc[i, j]:.2f}", ha="center", va="center", fontsize=7)
+        ax.set_title("Feature Correlation Heatmap")
+        fig.colorbar(image, ax=ax, fraction=0.046, pad=0.04)
+        fig.tight_layout()
+        path = plot_dir / "correlation_heatmap.png"
+        fig.savefig(path)
+        plt.close(fig)
+        saved.append(str(path))
+
+    target_cols = [target for target in TARGETS if target in df.columns]
+    if target_cols:
+        fig, axes = plt.subplots(1, len(target_cols), figsize=(6 * len(target_cols), 4), dpi=140)
+        if len(target_cols) == 1:
+            axes = [axes]
+        for ax, target in zip(axes, target_cols):
+            ax.hist(df[target].dropna(), bins=50, color="#40566b", edgecolor="white", alpha=0.9)
+            ax.set_title(f"Distribution: {target}")
+            ax.set_xlabel(target)
+            ax.set_ylabel("Frequency")
+            ax.grid(True, alpha=0.2)
+        fig.tight_layout()
+        path = plot_dir / "target_distributions.png"
+        fig.savefig(path)
+        plt.close(fig)
+        saved.append(str(path))
+
+    return saved
+
+
 def split_features_target(
     df: pd.DataFrame, target: str
 ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series, str]:
@@ -196,6 +285,12 @@ def candidate_models() -> Dict[str, object]:
             min_samples_leaf=3,
             random_state=RANDOM_STATE,
             n_jobs=1,
+        ),
+        "gradient_boosting": GradientBoostingRegressor(
+            n_estimators=120,
+            learning_rate=0.05,
+            max_depth=3,
+            random_state=RANDOM_STATE,
         ),
         "hist_gradient_boosting": HistGradientBoostingRegressor(
             learning_rate=0.06,
@@ -296,8 +391,10 @@ def save_prediction_plot(
     except Exception:
         return None
 
-    fig, ax = plt.subplots(figsize=(7, 6), dpi=140)
-    ax.scatter(y_true, y_pred, alpha=0.45, s=18, edgecolors="none")
+    residuals = y_true - y_pred
+    fig, axes = plt.subplots(1, 2, figsize=(13, 5.5), dpi=140)
+    ax = axes[0]
+    ax.scatter(y_true, y_pred, alpha=0.45, s=18, edgecolors="none", color="#40566b")
     low = min(float(np.nanmin(y_true)), float(np.nanmin(y_pred)))
     high = max(float(np.nanmax(y_true)), float(np.nanmax(y_pred)))
     ax.plot([low, high], [low, high], color="#C43C35", linewidth=2)
@@ -305,6 +402,15 @@ def save_prediction_plot(
     ax.set_xlabel("Actual")
     ax.set_ylabel("Predicted")
     ax.grid(True, alpha=0.25)
+
+    ax = axes[1]
+    ax.scatter(y_pred, residuals, alpha=0.45, s=18, edgecolors="none", color="#5f6f52")
+    ax.axhline(0, color="#C43C35", linewidth=2)
+    ax.set_title(f"Residual Plot: {target}")
+    ax.set_xlabel("Predicted")
+    ax.set_ylabel("Residual")
+    ax.grid(True, alpha=0.25)
+
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -312,12 +418,14 @@ def save_prediction_plot(
 
 
 def train_for_target(df: pd.DataFrame, target: str, output_dir: Path, cv_folds: int) -> Dict[str, object]:
+    print(f"[model] Training target: {target}")
     X_train, X_test, y_train, y_test, split_strategy = split_features_target(df, target)
 
     leaderboard: List[Dict[str, object]] = []
     trained_models: Dict[str, Pipeline] = {}
 
     for model_name, model in candidate_models().items():
+        print(f"  - evaluating {model_name}")
         pipeline = Pipeline(
             steps=[
                 ("preprocess", build_preprocessor(X_train)),
@@ -412,17 +520,24 @@ def write_report(report: Dict[str, object], output_dir: Path) -> Path:
 
 def run_pipeline(input_path: Path, output_dir: Path, cv_folds: int) -> Dict[str, object]:
     output_dir.mkdir(parents=True, exist_ok=True)
+    print("[1/6] Loading and cleaning data")
     df = clean_and_engineer(load_ghg_csv(input_path))
 
     clean_path = output_dir / "ghg_cleaned_modeling_data.csv"
     quality_path = output_dir / "data_quality_summary.csv"
+    outlier_path = output_dir / "outlier_summary.csv"
     leaderboard_path = output_dir / "model_leaderboard.csv"
 
+    print("[2/6] Saving cleaned data and quality checks")
     df.to_csv(clean_path, index=False)
     data_quality_summary(df).to_csv(quality_path, index=False)
+    outlier_summary(df).to_csv(outlier_path, index=False)
+    eda_plots = save_eda_plots(df, output_dir)
 
+    print("[3/6] Training and evaluating models")
     target_summaries = [train_for_target(df, target, output_dir, cv_folds) for target in TARGETS]
 
+    print("[4/6] Saving leaderboard")
     leaderboard_rows = []
     for target_summary in target_summaries:
         for row in target_summary["leaderboard"]:
@@ -433,16 +548,20 @@ def run_pipeline(input_path: Path, output_dir: Path, cv_folds: int) -> Dict[str,
         "input_file": str(input_path),
         "cleaned_dataset": str(clean_path),
         "data_quality_summary": str(quality_path),
+        "outlier_summary": str(outlier_path),
         "model_leaderboard": str(leaderboard_path),
+        "eda_plots": eda_plots,
         "total_rows_after_metadata_removal": int(len(df)),
         "columns": list(df.columns),
         "targets": target_summaries,
     }
 
     metrics_path = output_dir / "model_metrics.json"
+    print("[5/6] Writing reports")
     metrics_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
     report["markdown_report"] = str(write_report(report, output_dir))
     metrics_path.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    print("[6/6] Pipeline complete")
     return report
 
 

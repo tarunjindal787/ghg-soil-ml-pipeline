@@ -36,6 +36,7 @@ for name in [
     "model_metrics.json",
     "model_leaderboard.csv",
     "data_quality_summary.csv",
+    "outlier_summary.csv",
     "ghg_cleaned_modeling_data.csv",
     "soil_moisture_model.joblib",
     "soil_temperature_model.joblib",
@@ -47,6 +48,16 @@ for name in [
     "soil_temperature_5cm_actual_vs_predicted.png",
 ]:
     files.download(f"/content/ghg_ml_pipeline_outputs/{name}")
+```
+
+Download EDA plots:
+
+```python
+for name in [
+    "correlation_heatmap.png",
+    "target_distributions.png",
+]:
+    files.download(f"/content/ghg_ml_pipeline_outputs/plots/{name}")
 ```
 
 If you want Codex to edit the notebook directly, set the Colab sharing permission to "Anyone with the link can view" or download the notebook as `.ipynb` and attach it here.

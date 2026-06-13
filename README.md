@@ -2,16 +2,16 @@
 
 ## Project Overview
 
-This repository contains a complete machine learning pipeline for agricultural greenhouse gas and soil measurement data. The goal of the project is to clean raw environmental data, build reusable preprocessing logic, train regression models, and predict two important soil properties:
+This repository contains a complete machine learning pipeline for agricultural greenhouse gas and soil measurement data. The project cleans raw environmental data, builds reusable preprocessing logic, trains regression models, and predicts two important soil properties:
 
 - Soil moisture at 5 cm depth
 - Soil temperature at 5 cm depth
 
-The pipeline is designed for greenhouse gas, soil, and sustainable agriculture datasets where measurements may contain missing values, metadata rows, categorical experimental conditions, and time-dependent patterns.
+The final pipeline also takes reference from `generate_and_train.py`, especially its staged workflow, EDA plots, residual diagnostics, outlier analysis, model comparison, and saved output structure.
 
 ## Problem Statement
 
-Agricultural field datasets often contain greenhouse gas flux measurements, soil chemistry readings, sampling methods, chamber positions, and date-based observations. These datasets need careful preprocessing before they can be used for machine learning.
+Agricultural field datasets often contain greenhouse gas flux measurements, soil chemistry readings, sampling methods, chamber positions, and date-based observations. These datasets need careful preprocessing before machine learning models can use them reliably.
 
 This project builds an end-to-end regression pipeline that:
 
@@ -43,15 +43,15 @@ The pipeline was tested on `ghg (1).csv`.
   - Chamber position
   - Soil nitrogen features where available
 
-## Machine Learning Pipeline
+## Complete ML Pipeline
 
-The main pipeline is implemented in:
+Main file:
 
 `outputs/ghg_ml_pipeline.py`
 
 ### 1. Data Ingestion
 
-The script reads the raw CSV file and removes source metadata rows such as `description` and `units`, which are not real observations.
+The script reads the raw CSV file and removes metadata rows such as `description` and `units`, which are not actual observations.
 
 ### 2. Data Cleaning
 
@@ -62,6 +62,8 @@ The cleaning stage:
 - Parses the `date` column.
 - Standardizes text columns such as method and chamber position.
 - Drops columns that are almost completely empty.
+- Saves a data quality summary.
+- Saves an IQR-based outlier summary.
 
 ### 3. Feature Engineering
 
@@ -75,11 +77,21 @@ The pipeline creates additional date-based features:
 
 These features help the models capture seasonal agricultural patterns.
 
-### 4. Leakage-Safe Target Handling
+### 4. EDA and Diagnostics
+
+Reference-inspired EDA outputs include:
+
+- Target distribution plots
+- Numeric correlation heatmap
+- Actual-vs-predicted plots
+- Residual plots
+- Feature importance files
+
+### 5. Leakage-Safe Target Handling
 
 The pipeline predicts soil moisture and soil temperature separately. When training one target, both target columns are removed from the feature set. This prevents the model from accidentally learning from another directly measured soil label.
 
-### 5. Model Training
+### 6. Model Training
 
 The following regression models are compared:
 
@@ -87,9 +99,10 @@ The following regression models are compared:
 - Elastic Net
 - Random Forest Regressor
 - Extra Trees Regressor
+- Gradient Boosting Regressor
 - Histogram Gradient Boosting Regressor
 
-### 6. Model Evaluation
+### 7. Model Evaluation
 
 The project uses:
 
@@ -99,44 +112,34 @@ The project uses:
 
 Using a time-based holdout gives a more realistic evaluation for environmental datasets because it tests whether models generalize to future observations.
 
-### 7. Output Generation
-
-The pipeline saves:
-
-- Cleaned modeling dataset
-- Data quality summary
-- Model leaderboard
-- Full metrics JSON
-- Holdout predictions
-- Feature importance files
-- Actual-vs-predicted plots
-- Trained `.joblib` models
-- Markdown model report
-
 ## Project Structure
 
 ```text
 .
-├── README.md
-├── .gitignore
-└── outputs
-    ├── ghg_ml_pipeline.py
-    ├── requirements.txt
-    ├── COLAB_RUN_INSTRUCTIONS.md
-    └── ghg_ml_pipeline_outputs
-        ├── ML_PIPELINE_REPORT.md
-        ├── data_quality_summary.csv
-        ├── ghg_cleaned_modeling_data.csv
-        ├── model_leaderboard.csv
-        ├── model_metrics.json
-        ├── soil_moisture_5cm_actual_vs_predicted.png
-        ├── soil_moisture_5cm_feature_importance.csv
-        ├── soil_moisture_5cm_holdout_predictions.csv
-        ├── soil_moisture_model.joblib
-        ├── soil_temperature_5cm_actual_vs_predicted.png
-        ├── soil_temperature_5cm_feature_importance.csv
-        ├── soil_temperature_5cm_holdout_predictions.csv
-        └── soil_temperature_model.joblib
+|-- README.md
+|-- .gitignore
+`-- outputs/
+    |-- ghg_ml_pipeline.py
+    |-- requirements.txt
+    |-- COLAB_RUN_INSTRUCTIONS.md
+    `-- ghg_ml_pipeline_outputs/
+        |-- ML_PIPELINE_REPORT.md
+        |-- data_quality_summary.csv
+        |-- outlier_summary.csv
+        |-- ghg_cleaned_modeling_data.csv
+        |-- model_leaderboard.csv
+        |-- model_metrics.json
+        |-- soil_moisture_5cm_actual_vs_predicted.png
+        |-- soil_moisture_5cm_feature_importance.csv
+        |-- soil_moisture_5cm_holdout_predictions.csv
+        |-- soil_moisture_model.joblib
+        |-- soil_temperature_5cm_actual_vs_predicted.png
+        |-- soil_temperature_5cm_feature_importance.csv
+        |-- soil_temperature_5cm_holdout_predictions.csv
+        |-- soil_temperature_model.joblib
+        `-- plots/
+            |-- correlation_heatmap.png
+            `-- target_distributions.png
 ```
 
 ## How to Run
@@ -181,10 +184,11 @@ Target: `soil_moisture_5cm`
 - Rows used: 13,208
 - Training rows: 10,998
 - Test rows: 2,210
-- Best model: Elastic Net
+- Best model: Gradient Boosting
 
 | Model | CV RMSE | CV R2 | Holdout RMSE | Holdout R2 |
 |---|---:|---:|---:|---:|
+| Gradient Boosting | 7.6568 | 0.5342 | 9.0067 | 0.3091 |
 | Elastic Net | 9.0217 | 0.3533 | 9.0511 | 0.3023 |
 | Ridge | 8.8944 | 0.3715 | 9.2394 | 0.2729 |
 | Histogram Gradient Boosting | 5.2301 | 0.7827 | 9.5547 | 0.2225 |
@@ -199,10 +203,11 @@ Target: `soil_temperature_5cm`
 - Rows used: 14,913
 - Training rows: 12,711
 - Test rows: 2,202
-- Best model: Ridge Regression
+- Best model: Gradient Boosting
 
 | Model | CV RMSE | CV R2 | Holdout RMSE | Holdout R2 |
 |---|---:|---:|---:|---:|
+| Gradient Boosting | 3.1634 | 0.8000 | 3.9039 | 0.6438 |
 | Ridge | 4.3910 | 0.6145 | 4.3220 | 0.5634 |
 | Elastic Net | 4.4416 | 0.6055 | 4.3615 | 0.5554 |
 | Extra Trees | 1.5875 | 0.9495 | 4.3623 | 0.5552 |
@@ -217,10 +222,13 @@ Target: `soil_temperature_5cm`
 | `model_metrics.json` | Full structured metrics and artifact paths |
 | `model_leaderboard.csv` | Model comparison table |
 | `data_quality_summary.csv` | Missing value and column summary |
+| `outlier_summary.csv` | IQR-based outlier counts by numeric column |
 | `ghg_cleaned_modeling_data.csv` | Cleaned dataset used for modeling |
 | `*_holdout_predictions.csv` | Actual, predicted, and residual values |
 | `*_feature_importance.csv` | Feature importance or permutation importance |
-| `*_actual_vs_predicted.png` | Diagnostic plots |
+| `*_actual_vs_predicted.png` | Actual-vs-predicted and residual diagnostic plots |
+| `plots/correlation_heatmap.png` | Numeric feature correlation heatmap |
+| `plots/target_distributions.png` | Target distribution plots |
 | `*_model.joblib` | Saved trained models |
 
 ## Pipeline Advantages
@@ -231,17 +239,18 @@ Target: `soil_temperature_5cm`
 - Prevents target leakage by removing target columns from features.
 - Uses time-based holdout testing for realistic future-year evaluation.
 - Compares multiple regression algorithms.
+- Includes reference-inspired EDA plots, residual plots, outlier summaries, and feature importance.
 - Saves outputs needed for review, reporting, and future prediction.
 - Includes Colab instructions for easy notebook execution.
 
 ## Pipeline Limitations
 
-- The soil moisture model has moderate predictive power, with holdout R2 around 0.30.
+- The soil moisture model has moderate predictive power, with holdout R2 around 0.31.
 - Some GHG and soil chemistry columns have high missingness, which limits model performance.
 - The dataset used here has 18,762 usable rows, not over 100,000 rows.
 - No external weather, irrigation, crop, or treatment-management variables are included.
 - Hyperparameter tuning is limited to practical default settings.
-- Tree-based models show strong cross-validation scores but weaker future-year holdout performance, suggesting possible temporal shift or overfitting.
+- Some tree-based models show strong cross-validation scores but weaker future-year holdout performance, suggesting temporal shift or overfitting risk.
 
 ## Future Improvements
 
