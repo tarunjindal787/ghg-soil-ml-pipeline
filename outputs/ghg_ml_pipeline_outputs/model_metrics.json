@@ -1,0 +1,200 @@
+{
+  "input_file": "C:\\Users\\jinda\\Downloads\\ghg (1).csv",
+  "cleaned_dataset": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\ghg_cleaned_modeling_data.csv",
+  "data_quality_summary": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\data_quality_summary.csv",
+  "model_leaderboard": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\model_leaderboard.csv",
+  "total_rows_after_metadata_removal": 18762,
+  "columns": [
+    "uniqueid",
+    "plotid",
+    "date",
+    "year",
+    "method",
+    "subsample",
+    "position",
+    "co2_c_flux_kg_ha_day",
+    "co2_r2",
+    "n2o_n_flux_g_ha_day",
+    "n2o_r2",
+    "nh3_n_flux_g_ha_day",
+    "nh3_r2",
+    "ch4_c_flux_g_ha_day",
+    "ch4_r2",
+    "soil_moisture_5cm",
+    "soil_temperature_5cm",
+    "soil_nitrate_n_0_10cm",
+    "soil_ammonium_n_0_10cm",
+    "month",
+    "day_of_year",
+    "quarter",
+    "is_growing_season",
+    "season"
+  ],
+  "targets": [
+    {
+      "target": "soil_moisture_5cm",
+      "split_strategy": "time_holdout_year_2015",
+      "rows_used": 13208,
+      "train_rows": 10998,
+      "test_rows": 2210,
+      "features": [
+        "uniqueid",
+        "plotid",
+        "year",
+        "method",
+        "subsample",
+        "position",
+        "co2_c_flux_kg_ha_day",
+        "co2_r2",
+        "n2o_n_flux_g_ha_day",
+        "n2o_r2",
+        "nh3_n_flux_g_ha_day",
+        "nh3_r2",
+        "ch4_c_flux_g_ha_day",
+        "ch4_r2",
+        "soil_nitrate_n_0_10cm",
+        "soil_ammonium_n_0_10cm",
+        "month",
+        "day_of_year",
+        "quarter",
+        "is_growing_season",
+        "season"
+      ],
+      "best_model": "elastic_net",
+      "saved_model": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_moisture_model.joblib",
+      "saved_predictions": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_moisture_5cm_holdout_predictions.csv",
+      "saved_feature_importance": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_moisture_5cm_feature_importance.csv",
+      "saved_plot": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_moisture_5cm_actual_vs_predicted.png",
+      "leaderboard": [
+        {
+          "model": "elastic_net",
+          "cv_mae": 7.223960783201108,
+          "cv_rmse": 9.021653827581678,
+          "cv_r2": 0.35333107205301467,
+          "mae": 6.465774287300021,
+          "rmse": 9.051087314522514,
+          "r2": 0.302265966421456
+        },
+        {
+          "model": "ridge",
+          "cv_mae": 7.051781652693664,
+          "cv_rmse": 8.894356706461865,
+          "cv_r2": 0.371456446631713,
+          "mae": 6.620574116313228,
+          "rmse": 9.239398212137631,
+          "r2": 0.27293076423455087
+        },
+        {
+          "model": "hist_gradient_boosting",
+          "cv_mae": 3.8287224702684384,
+          "cv_rmse": 5.230069328347718,
+          "cv_r2": 0.7826552988119119,
+          "mae": 7.270763007842757,
+          "rmse": 9.554670277674262,
+          "r2": 0.22246525087045121
+        },
+        {
+          "model": "extra_trees",
+          "cv_mae": 3.4684085478004376,
+          "cv_rmse": 4.853518509669037,
+          "cv_r2": 0.8127758992380425,
+          "mae": 7.759921912913808,
+          "rmse": 10.168868086831951,
+          "r2": 0.11928858482225024
+        },
+        {
+          "model": "random_forest",
+          "cv_mae": 3.5098717457060435,
+          "cv_rmse": 4.98105411085379,
+          "cv_r2": 0.8029047174360716,
+          "mae": 7.834729968460062,
+          "rmse": 10.29390631407755,
+          "r2": 0.09749665346584502
+        }
+      ]
+    },
+    {
+      "target": "soil_temperature_5cm",
+      "split_strategy": "time_holdout_year_2015",
+      "rows_used": 14913,
+      "train_rows": 12711,
+      "test_rows": 2202,
+      "features": [
+        "uniqueid",
+        "plotid",
+        "year",
+        "method",
+        "subsample",
+        "position",
+        "co2_c_flux_kg_ha_day",
+        "co2_r2",
+        "n2o_n_flux_g_ha_day",
+        "n2o_r2",
+        "nh3_n_flux_g_ha_day",
+        "nh3_r2",
+        "ch4_c_flux_g_ha_day",
+        "ch4_r2",
+        "soil_nitrate_n_0_10cm",
+        "soil_ammonium_n_0_10cm",
+        "month",
+        "day_of_year",
+        "quarter",
+        "is_growing_season",
+        "season"
+      ],
+      "best_model": "ridge",
+      "saved_model": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_temperature_model.joblib",
+      "saved_predictions": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_temperature_5cm_holdout_predictions.csv",
+      "saved_feature_importance": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_temperature_5cm_feature_importance.csv",
+      "saved_plot": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\soil_temperature_5cm_actual_vs_predicted.png",
+      "leaderboard": [
+        {
+          "model": "ridge",
+          "cv_mae": 3.428461544538816,
+          "cv_rmse": 4.390995744422034,
+          "cv_r2": 0.6145147127419134,
+          "mae": 3.4243252528152004,
+          "rmse": 4.321958774029012,
+          "r2": 0.5633750230585421
+        },
+        {
+          "model": "elastic_net",
+          "cv_mae": 3.4566481814025725,
+          "cv_rmse": 4.441639230837088,
+          "cv_r2": 0.6055401560940997,
+          "mae": 3.4197321761160637,
+          "rmse": 4.361479789016925,
+          "r2": 0.555353309289157
+        },
+        {
+          "model": "extra_trees",
+          "cv_mae": 0.9726207809505786,
+          "cv_rmse": 1.587503135185423,
+          "cv_r2": 0.9495220893498995,
+          "mae": 3.3837778125742024,
+          "rmse": 4.362277534809106,
+          "r2": 0.5551906363049233
+        },
+        {
+          "model": "hist_gradient_boosting",
+          "cv_mae": 1.2964986048073042,
+          "cv_rmse": 1.9196585318181956,
+          "cv_r2": 0.9263434933670585,
+          "mae": 3.4814328776771646,
+          "rmse": 4.445756708875713,
+          "r2": 0.5380034623027625
+        },
+        {
+          "model": "random_forest",
+          "cv_mae": 1.0626990874491684,
+          "cv_rmse": 1.747148349192025,
+          "cv_r2": 0.9389871625543614,
+          "mae": 3.7001268688072297,
+          "rmse": 4.953300057345555,
+          "r2": 0.42649579030189866
+        }
+      ]
+    }
+  ],
+  "markdown_report": "C:\\Users\\jinda\\Documents\\Codex\\2026-06-13\\hi\\outputs\\ghg_ml_pipeline_outputs\\ML_PIPELINE_REPORT.md"
+}
